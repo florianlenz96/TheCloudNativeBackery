@@ -16,3 +16,18 @@ jobs:
           az deployment sub what-if \
             --location westeurope \
             --template-file infrastructure/main.bicep
+            
+  deploy:
+    needs: what_if
+    runs-on: ubuntu-latest
+    environment: development
+    steps:
+      - uses: actions/checkout@v4
+      - uses: azure/login@v2
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+      - name: Deploy
+        run: |
+          az deployment sub create \
+            --location westeurope \
+            --template-file infrastructure/main.bicep
