@@ -23,3 +23,5 @@ module containerRegistryModule './containerRegistry.bicep' = {
     acrName: 'acr${projectName}${environment}'
   }
 }
+
+output containerRegistryName string = containerRegistryModule.outputs.acrName

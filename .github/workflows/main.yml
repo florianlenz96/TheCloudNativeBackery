@@ -30,4 +30,92 @@ jobs:
         run: |
           az deployment sub create \
             --location westeurope \
-            --template-file infrastructure/main.bicep
+            --template-file infrastructure/main.bicep \
+            --output json > deployment_output.json
+      - name: Upload deployment output
+        uses: actions/upload-artifact@v4
+        with:
+          name: deployment-output
+          path: deployment_output.json
+
+  acr-build:
+    needs: deploy
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Azure Login
+        uses: azure/login@v2
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Download deployment output
+        uses: actions/download-artifact@v4
+        with:
+          name: deployment-output
+
+      - name: Read ACR name
+        run: |
+          ACR_NAME=$(jq -r '.properties.outputs.containerRegistryName.value' deployment_output.json)
+          echo "ACR_NAME=$ACR_NAME" >> $GITHUB_ENV
+
+      - name: Install xmllint
+        run: sudo apt-get update && sudo apt-get install -y libxml2-utils
+
+      - name: Extract version from csproj
+        run: |
+          CSProj="src/BackeryOnlineShop/BackeryOnlineShop/BackeryOnlineShop.csproj"
+          VERSION=$(xmllint --xpath 'string(//Version|//PropertyGroup/Version)' "$CSProj")
+          [ -z "$VERSION" ] && echo "Missing <Version> in $CSProj" && exit 1
+          echo "VERSION=$VERSION" >> $GITHUB_ENV
+          echo "Project version: $VERSION"
+
+      - name: Compute tags
+        run: |
+          REPO="backeryonlineshop"
+          BRANCH="${GITHUB_REF#refs/heads/}"
+          echo "REPO=$REPO" >> $GITHUB_ENV
+
+          if az acr repository list -n "$ACR_NAME" -o tsv | grep -Fxq "$REPO"; then
+            REPO_EXISTS=1
+          else
+            REPO_EXISTS=0
+          fi
+
+          if [ "$BRANCH" = "main" ]; then
+            if [ "$REPO_EXISTS" -eq 1 ]; then
+              if az acr repository show-tags -n "$ACR_NAME" --repository "$REPO" -o tsv | grep -Fxq "$VERSION"; then
+                echo "Tag $VERSION already exists—bump <Version>."; exit 1
+              fi
+            fi
+            IMAGE_TAG="$VERSION"
+          else
+            if [ "$REPO_EXISTS" -eq 1 ]; then
+              COUNT=$(az acr repository show-tags -n "$ACR_NAME" --repository "$REPO" -o tsv \
+                | awk -v v="$VERSION-rc." 'index($0,v)==1' | wc -l)
+              RC_NUM=$((COUNT+1))
+            else
+              RC_NUM=1
+            fi
+            IMAGE_TAG="${VERSION}-rc.${RC_NUM}"
+          fi
+          echo "IMAGE_TAG=$IMAGE_TAG" >> $GITHUB_ENV
+          echo "Computed image tag: $IMAGE_TAG"
+
+      - name: Build in ACR
+        run: |
+          az acr build \
+            --registry "$ACR_NAME" \
+            --image "$REPO:$IMAGE_TAG" \
+            --file src/BackeryOnlineShop/Dockerfile \
+            src/BackeryOnlineShop
+
+      - name: Delete rc tags for current version (main only)
+        if: ${{ github.ref == 'refs/heads/main' }}
+        run: |
+          REPO="${REPO:-backeryonlineshop}"
+          for TAG in $(az acr repository show-tags -n "$ACR_NAME" --repository "$REPO" -o tsv \
+                        | grep -E "^${VERSION}-rc\.[0-9]+$" || true); do
+            echo "Deleting rc tag $TAG"
+            az acr repository delete -n "$ACR_NAME" --image "$REPO:$TAG" --yes
+          done
