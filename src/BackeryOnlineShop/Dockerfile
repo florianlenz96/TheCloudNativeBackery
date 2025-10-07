@@ -9,7 +9,7 @@ RUN dotnet restore ./BackeryOnlineShop/BackeryOnlineShop.csproj
 # Now copy the rest
 COPY src/BackeryOnlineShop/. .
 WORKDIR /src/BackeryOnlineShop
-RUN dotnet publish BackeryOnlineShop/BackeryOnlineShop.csproj -c Release -o /app/publish --no-restore
+RUN dotnet publish BackeryOnlineShop.csproj -c Release -o /app/publish --no-restore
 
 # Runtime
 FROM mcr.microsoft.com/dotnet/aspnet:9.0 AS final
