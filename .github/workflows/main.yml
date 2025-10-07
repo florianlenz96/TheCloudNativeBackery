@@ -151,7 +151,7 @@ jobs:
             --registry "$ACR_NAME" \
             --image "$REPO:$IMAGE_TAG" \
             --file src/BackeryOnlineShop/Dockerfile \
-            src/BackeryOnlineShop
+            .
 
       - name: Delete rc tags for current version (main only)
         if: ${{ github.ref == 'refs/heads/main' }}
