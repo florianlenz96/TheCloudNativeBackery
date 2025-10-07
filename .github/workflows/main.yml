@@ -119,3 +119,23 @@ jobs:
             echo "Deleting rc tag $TAG"
             az acr repository delete -n "$ACR_NAME" --image "$REPO:$TAG" --yes
           done
+
+      - name: Check for ACR Task
+        id: acr_task_check
+        continue-on-error: true
+        run: |
+          az acr task show \
+            --registry "$ACR_NAME" \
+            --name "build-latest" >/dev/null
+
+      - name: Create ACR Task if missing
+        if: steps.acr_task_check.outcome == 'failure'
+        run: |
+          az acr task create \
+            --registry "$ACR_NAME" \
+            --name "build-latest" \
+            --context "https://github.com/florianlenz96/TheCloudNativeBackery.git" \
+            --branch "main" \
+            --file "src/BackeryOnlineShop/Dockerfile" \
+            --image "$IMAGE_REPO:latest" \
+            --commit-trigger-enabled true
