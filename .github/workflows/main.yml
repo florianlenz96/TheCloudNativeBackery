@@ -76,7 +76,8 @@ jobs:
             --context "https://github.com/florianlenz96/TheCloudNativeBackery.git#main" \
             --file "src/BackeryOnlineShop/Dockerfile" \
             --image "$IMAGE_REPO:latest" \
-            --commit-trigger-enabled true
+            --commit-trigger-enabled true \
+            --git-access-token ${{ secrets.PAT_GITHUB }}
 
   acr-build:
     needs: deploy
