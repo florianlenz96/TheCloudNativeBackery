@@ -20,7 +20,7 @@ jobs:
   deploy:
     needs: what_if
     runs-on: ubuntu-latest
-    environment: development
+    #environment: development
     steps:
       - uses: actions/checkout@v4
       - uses: azure/login@v2
@@ -37,6 +37,46 @@ jobs:
         with:
           name: deployment-output
           path: deployment_output.json
+
+  acr-task-latest:
+    needs: deploy
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Azure Login
+        uses: azure/login@v2
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Download deployment output
+        uses: actions/download-artifact@v4
+        with:
+          name: deployment-output
+
+      - name: Read ACR name
+        run: |
+          ACR_NAME=$(jq -r '.properties.outputs.containerRegistryName.value' deployment_output.json)
+          echo "ACR_NAME=$ACR_NAME" >> $GITHUB_ENV
+
+      - name: Check for ACR Task
+        id: acr_task_check
+        continue-on-error: true
+        run: |
+          az acr task show \
+            --registry "$ACR_NAME" \
+            --name "build-latest" >/dev/null
+
+      - name: Create ACR Task if missing
+        if: steps.acr_task_check.outcome == 'failure'
+        run: |
+          az acr task create \
+            --registry "$ACR_NAME" \
+            --name "build-latest" \
+            --context "https://github.com/florianlenz96/TheCloudNativeBackery.git#main" \
+            --file "src/BackeryOnlineShop/Dockerfile" \
+            --image "$IMAGE_REPO:latest" \
+            --commit-trigger-enabled true
 
   acr-build:
     needs: deploy
@@ -119,23 +159,3 @@ jobs:
             echo "Deleting rc tag $TAG"
             az acr repository delete -n "$ACR_NAME" --image "$REPO:$TAG" --yes
           done
-
-      - name: Check for ACR Task
-        id: acr_task_check
-        continue-on-error: true
-        run: |
-          az acr task show \
-            --registry "$ACR_NAME" \
-            --name "build-latest" >/dev/null
-
-      - name: Create ACR Task if missing
-        if: steps.acr_task_check.outcome == 'failure'
-        run: |
-          az acr task create \
-            --registry "$ACR_NAME" \
-            --name "build-latest" \
-            --context "https://github.com/florianlenz96/TheCloudNativeBackery.git" \
-            --branch "main" \
-            --file "src/BackeryOnlineShop/Dockerfile" \
-            --image "$IMAGE_REPO:latest" \
-            --commit-trigger-enabled true
