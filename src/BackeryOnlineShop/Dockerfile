@@ -3,12 +3,13 @@ FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
 WORKDIR /src
 
 # Copy just the project file(s) first for restore caching
-COPY BackeryOnlineShop/BackeryOnlineShop.csproj ./
-RUN dotnet restore BackeryOnlineShop.csproj
+COPY src/BackeryOnlineShop/BackeryOnlineShop/BackeryOnlineShop.csproj ./BackeryOnlineShop/
+RUN dotnet restore ./BackeryOnlineShop/BackeryOnlineShop.csproj
 
 # Now copy the rest
-COPY BackeryOnlineShop/. ./
-RUN dotnet publish BackeryOnlineShop.csproj -c Release -o /app/publish
+COPY src/BackeryOnlineShop/. .
+WORKDIR /src/BackeryOnlineShop
+RUN dotnet publish BackeryOnlineShop/BackeryOnlineShop.csproj -c Release -o /app/publish --no-restore
 
 # Runtime
 FROM mcr.microsoft.com/dotnet/aspnet:9.0 AS final
