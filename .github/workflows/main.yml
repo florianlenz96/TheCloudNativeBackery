@@ -56,6 +56,8 @@ jobs:
 
       - name: Read ACR name
         run: |
+          REPO="backeryonlineshop"
+          echo "REPO=$REPO" >> $GITHUB_ENV
           ACR_NAME=$(jq -r '.properties.outputs.containerRegistryName.value' deployment_output.json)
           echo "ACR_NAME=$ACR_NAME" >> $GITHUB_ENV
 
@@ -75,7 +77,7 @@ jobs:
             --name "build-latest" \
             --context "https://github.com/florianlenz96/TheCloudNativeBackery.git#main" \
             --file "src/BackeryOnlineShop/Dockerfile" \
-            --image "$IMAGE_REPO:latest" \
+            --image "$REPO:latest" \
             --commit-trigger-enabled true \
             --git-access-token ${{ secrets.PAT_GITHUB }}
 
