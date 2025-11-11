@@ -21,3 +21,5 @@ resource acrResource 'Microsoft.ContainerRegistry/registries@2023-01-01-preview'
 }
 
 output acrName string = acrResource.name
+output acrLoginServer string = acrResource.properties.loginServer
+output acrId string = acrResource.id

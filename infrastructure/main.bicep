@@ -24,4 +24,24 @@ module containerRegistryModule './containerRegistry.bicep' = {
   }
 }
 
+module webAppModule './webapp.bicep' = {
+  name: 'webAppModule'
+  scope: rg
+  params: {
+    appName: '${projectName}-${environment}'
+    location: location
+    containerImage: 'backeryonlineshop:latest'
+    acrLoginServer: containerRegistryModule.outputs.acrLoginServer
+  }
+}
+
+module webAppAcrRoleModule './webappAcrRole.bicep' = {
+  name: 'webAppAcrRoleModule'
+  scope: rg
+  params: {
+    appName: webAppModule.outputs.appName
+    acrName: containerRegistryModule.outputs.acrName
+  }
+}
+
 output containerRegistryName string = containerRegistryModule.outputs.acrName
