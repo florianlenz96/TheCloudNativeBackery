@@ -142,14 +142,17 @@ jobs:
             fi
             IMAGE_TAG="${VERSION}-rc.${RC_NUM}"
           fi
-          echo "IMAGE_TAG=$IMAGE_TAG" >> $GITHUB_ENV
           echo "Computed image tag: $IMAGE_TAG"
+
+          echo "image_tag=$IMAGE_TAG" >> "$GITHUB_OUTPUT"
+          echo "repo=$REPO" >> "$GITHUB_OUTPUT"
+
 
       - name: Build in ACR
         run: |
           az acr build \
             --registry "$ACR_NAME" \
-            --image "$REPO:$IMAGE_TAG" \
+            --image "${{ steps.compute_tags.outputs.repo }}:${{ steps.compute_tags.outputs.image_tag }}" \
             --file src/BackeryOnlineShop/Dockerfile \
             .
 
@@ -162,3 +165,40 @@ jobs:
             echo "Deleting rc tag $TAG"
             az acr repository delete -n "$ACR_NAME" --image "$REPO:$TAG" --yes
           done
+
+  deploy-slot:
+    needs: acr-build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Azure Login
+        uses: azure/login@v2
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Download deployment output
+        uses: actions/download-artifact@v4
+        with:
+          name: deployment-output
+
+      - name: Create version slot
+        env:
+          IMAGE_TAG: ${{ needs.acr-build.outputs.image_tag }}
+          REPO: ${{ needs.acr-build.outputs.repo }}
+        run: |
+          APP_NAME=$(jq -r '.properties.outputs.appServiceName.value' deployment_output.json)
+          RESOURCE_GROUP=$(jq -r '.properties.outputs.resourceGroupName.value' deployment_output.json)
+          ACR_NAME=$(jq -r '.properties.outputs.containerRegistryName.value' deployment_output.json)
+          SLOT_NAME=$(echo "$IMAGE_TAG" | sed 's/-.*//' | tr '.' '-')
+
+          az webapp deployment slot create \
+            --name "$APP_NAME" \
+            --resource-group "$RESOURCE_GROUP" \
+          --slot "$SLOT_NAME"
+
+          az webapp config container set \
+            --name "$APP_NAME" \
+            --resource-group "$RESOURCE_GROUP" \
+            --slot "$SLOT_NAME" \
+            --docker-custom-image-name "${ACR_NAME}.azurecr.io/${REPO}:${IMAGE_TAG}"

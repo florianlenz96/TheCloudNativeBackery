@@ -6,7 +6,7 @@ param appName string = 'acr${uniqueString(resourceGroup().id)}'
 @description('Provide a location for the registry.')
 param location string = resourceGroup().location
 
-param sku string = 'B1'
+param sku string = 'S1'
 
 param containerImage string
 param acrLoginServer string
@@ -20,7 +20,7 @@ resource appServicePlan 'Microsoft.Web/serverfarms@2023-12-01' = {
   sku: {
     name: sku
   }
-  kind: 'linux'
+  kind: 'app,linux,container'
 }
 
 resource appService 'Microsoft.Web/sites@2023-12-01' = {
