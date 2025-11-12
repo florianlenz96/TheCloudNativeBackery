@@ -1,4 +1,4 @@
-param appName string = 'acr${uniqueString(resourceGroup().id)}'
+param appName string
 param acrName string
 
 resource acr 'Microsoft.ContainerRegistry/registries@2025-04-01' existing = {
@@ -6,7 +6,7 @@ resource acr 'Microsoft.ContainerRegistry/registries@2025-04-01' existing = {
 }
 
 resource appService 'Microsoft.Web/sites@2023-12-01' existing = {
-  name: '${appName}-web'
+  name: appName
 }
 
 resource acrPullRoleAssignment 'Microsoft.Authorization/roleAssignments@2022-04-01' = {

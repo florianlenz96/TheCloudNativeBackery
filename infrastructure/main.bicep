@@ -45,3 +45,5 @@ module webAppAcrRoleModule './webappAcrRole.bicep' = {
 }
 
 output containerRegistryName string = containerRegistryModule.outputs.acrName
+output webAppName string = webAppModule.outputs.appName
+output resourceGroupName string = rg.name
