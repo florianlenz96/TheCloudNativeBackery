@@ -84,6 +84,9 @@ jobs:
   acr-build:
     needs: deploy
     runs-on: ubuntu-latest
+    outputs:
+      image_tag: ${{ steps.compute_tags.outputs.image_tag }}
+      repo: ${{ steps.compute_tags.outputs.repo }}
     steps:
       - uses: actions/checkout@v4
 
@@ -114,6 +117,7 @@ jobs:
           echo "Project version: $VERSION"
 
       - name: Compute tags
+        id: compute_tags
         run: |
           REPO="backeryonlineshop"
           BRANCH="${GITHUB_REF#refs/heads/}"
@@ -145,8 +149,8 @@ jobs:
           echo "IMAGE_TAG=$IMAGE_TAG" >> $GITHUB_ENV
           echo "Computed image tag: $IMAGE_TAG"
 
-          echo "image_tag=$IMAGE_TAG" >> "$GITHUB_OUTPUT"
-          echo "repo=$REPO" >> "$GITHUB_OUTPUT"
+          echo "image_tag=$IMAGE_TAG" >> $GITHUB_OUTPUT
+          echo "repo=$REPO" >> $GITHUB_OUTPUT
 
       - name: Build in ACR
         run: |
@@ -197,10 +201,15 @@ jobs:
           echo "Resource Group: $RESOURCE_GROUP"
           echo "Container Registry: $ACR_NAME"
 
-          az webapp deployment slot create \
-            --name "$APP_NAME" \
-            --resource-group "$RESOURCE_GROUP" \
-          --slot "$SLOT_NAME"
+          # Check if slot exists
+          if az webapp deployment slot list --name "$APP_NAME" --resource-group "$RESOURCE_GROUP" | grep -q '"name": ".*/'$SLOT_NAME'"'; then
+            echo "Slot $SLOT_NAME already exists. Skipping creation."
+          else
+            az webapp deployment slot create \
+              --name "$APP_NAME" \
+              --resource-group "$RESOURCE_GROUP" \
+              --slot "$SLOT_NAME"
+          fi
 
           az webapp config container set \
             --name "$APP_NAME" \
