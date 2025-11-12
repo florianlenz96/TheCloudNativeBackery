@@ -142,17 +142,17 @@ jobs:
             fi
             IMAGE_TAG="${VERSION}-rc.${RC_NUM}"
           fi
+          echo "IMAGE_TAG=$IMAGE_TAG" >> $GITHUB_ENV
           echo "Computed image tag: $IMAGE_TAG"
 
           echo "image_tag=$IMAGE_TAG" >> "$GITHUB_OUTPUT"
           echo "repo=$REPO" >> "$GITHUB_OUTPUT"
 
-
       - name: Build in ACR
         run: |
           az acr build \
             --registry "$ACR_NAME" \
-            --image "${{ steps.compute_tags.outputs.repo }}:${{ steps.compute_tags.outputs.image_tag }}" \
+            --image "$REPO:$IMAGE_TAG" \
             --file src/BackeryOnlineShop/Dockerfile \
             .
 
