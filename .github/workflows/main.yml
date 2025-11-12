@@ -187,10 +187,15 @@ jobs:
           IMAGE_TAG: ${{ needs.acr-build.outputs.image_tag }}
           REPO: ${{ needs.acr-build.outputs.repo }}
         run: |
-          APP_NAME=$(jq -r '.properties.outputs.appServiceName.value' deployment_output.json)
+          APP_NAME=$(jq -r '.properties.outputs.webAppName.value' deployment_output.json)
           RESOURCE_GROUP=$(jq -r '.properties.outputs.resourceGroupName.value' deployment_output.json)
           ACR_NAME=$(jq -r '.properties.outputs.containerRegistryName.value' deployment_output.json)
           SLOT_NAME=$(echo "$IMAGE_TAG" | sed 's/-.*//' | tr '.' '-')
+
+          echo "Creating deployment slot: $SLOT_NAME"
+          echo "App Service: $APP_NAME"
+          echo "Resource Group: $RESOURCE_GROUP"
+          echo "Container Registry: $ACR_NAME"
 
           az webapp deployment slot create \
             --name "$APP_NAME" \
