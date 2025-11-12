@@ -217,8 +217,8 @@ jobs:
 
           az webapp config container set \
             --resource-group $RESOURCE_GROUP --name $APP_NAME --slot $SLOT_NAME \
-            --container-image-name $IMAGE \
-            --container-registry-url "https://$ACR_NAME.azurecr.io"
+            --docker-custom-image-name $IMAGE \
+            --docker-registry-server-url "https://$ACR_NAME.azurecr.io"
 
           az webapp config set -g $RESOURCE_GROUP -n $APP_NAME --slot $SLOT_NAME \
             --generic-configurations '{"acrUseManagedIdentityCreds": true}'
