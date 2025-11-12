@@ -212,6 +212,10 @@ jobs:
           ACR_NAME=$(jq -r '.properties.outputs.containerRegistryName.value' deployment_output.json)
           SLOT_NAME=$(echo "$IMAGE_TAG" | sed 's/-.*//' | tr '.' '-')
 
+          echo "docker-registry-url: https://$ACR_NAME.azurecr.io"
+          echo "image-tag: $IMAGE_TAG"
+          echo "repo: $REPO"
+
           az webapp deployment slot create \
             --resource-group $RESOURCE_GROUP --name $APP_NAME --slot $SLOT_NAME
 
