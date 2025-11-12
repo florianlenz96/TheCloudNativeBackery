@@ -186,7 +186,7 @@ jobs:
         with:
           name: deployment-output
 
-      - name: Create version slot
+      - name: Delete version slot
         env:
           IMAGE_TAG: ${{ needs.acr-build.outputs.image_tag }}
           REPO: ${{ needs.acr-build.outputs.repo }}
@@ -196,20 +196,26 @@ jobs:
           ACR_NAME=$(jq -r '.properties.outputs.containerRegistryName.value' deployment_output.json)
           SLOT_NAME=$(echo "$IMAGE_TAG" | sed 's/-.*//' | tr '.' '-')
 
-          echo "Creating deployment slot: $SLOT_NAME"
-          echo "App Service: $APP_NAME"
-          echo "Resource Group: $RESOURCE_GROUP"
-          echo "Container Registry: $ACR_NAME"
+          az webapp deployment slot delete \
+            --name "$APP_NAME" \
+            --resource-group "$RESOURCE_GROUP" \
+            --slot "$SLOT_NAME"
 
-          # Check if slot exists
-          if az webapp deployment slot list --name "$APP_NAME" --resource-group "$RESOURCE_GROUP" | grep -q '"name": ".*/'$SLOT_NAME'"'; then
-            echo "Slot $SLOT_NAME already exists. Skipping creation."
-          else
-            az webapp deployment slot create \
-              --name "$APP_NAME" \
-              --resource-group "$RESOURCE_GROUP" \
-              --slot "$SLOT_NAME"
-          fi
+      - name: Create version slot (feature branch only)
+        if: startsWith(github.ref_name, 'feature')
+        env:
+          IMAGE_TAG: ${{ needs.acr-build.outputs.image_tag }}
+          REPO: ${{ needs.acr-build.outputs.repo }}
+        run: |
+          APP_NAME=$(jq -r '.properties.outputs.webAppName.value' deployment_output.json)
+          RESOURCE_GROUP=$(jq -r '.properties.outputs.resourceGroupName.value' deployment_output.json)
+          ACR_NAME=$(jq -r '.properties.outputs.containerRegistryName.value' deployment_output.json)
+          SLOT_NAME=$(echo "$IMAGE_TAG" | sed 's/-.*//' | tr '.' '-')
+
+          az webapp deployment slot create \
+            --name "$APP_NAME" \
+            --resource-group "$RESOURCE_GROUP" \
+            --slot "$SLOT_NAME"
 
           az webapp config container set \
             --name "$APP_NAME" \
