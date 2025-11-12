@@ -221,4 +221,4 @@ jobs:
             --name "$APP_NAME" \
             --resource-group "$RESOURCE_GROUP" \
             --slot "$SLOT_NAME" \
-            --docker-custom-image-name "${ACR_NAME}.azurecr.io/${REPO}:${IMAGE_TAG}"
+            --container-image-name "${ACR_NAME}.azurecr.io/${REPO}:${IMAGE_TAG}"
