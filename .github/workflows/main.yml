@@ -217,7 +217,7 @@ jobs:
 
           az webapp config container set \
             --resource-group $RESOURCE_GROUP --name $APP_NAME --slot $SLOT_NAME \
-            --docker-custom-image-name $IMAGE \
+            --docker-custom-image-name $REPO:$IMAGE_TAG \
             --docker-registry-server-url "https://$ACR_NAME.azurecr.io"
 
           az webapp config set -g $RESOURCE_GROUP -n $APP_NAME --slot $SLOT_NAME \
