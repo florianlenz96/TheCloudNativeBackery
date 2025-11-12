@@ -213,12 +213,14 @@ jobs:
           SLOT_NAME=$(echo "$IMAGE_TAG" | sed 's/-.*//' | tr '.' '-')
 
           az webapp deployment slot create \
-            --name "$APP_NAME" \
-            --resource-group "$RESOURCE_GROUP" \
-            --slot "$SLOT_NAME"
+            --resource-group $RG --name $APP --slot $SLOT
 
           az webapp config container set \
-            --name "$APP_NAME" \
-            --resource-group "$RESOURCE_GROUP" \
-            --slot "$SLOT_NAME" \
-            --container-image-name "${ACR_NAME}.azurecr.io/${REPO}:${IMAGE_TAG}"
+            --resource-group $RG --name $APP --slot $SLOT \
+            --container-image-name $IMAGE \
+            --container-registry-url "https://$ACR.azurecr.io"
+
+          az webapp config set -g $RG -n $APP --slot $SLOT \
+            --generic-configurations '{"acrUseManagedIdentityCreds": true}'
+
+          az webapp restart --name $APP --resource-group $RG --slot $SLOT
