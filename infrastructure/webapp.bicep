@@ -34,7 +34,7 @@ resource appService 'Microsoft.Web/sites@2023-12-01' = {
       alwaysOn: true
       appSettings: [
         {
-          name: 'FeatureManagement:ProductsFeature'
+          name: 'FeatureManagement__ProductsFeature'
           value: 'false'
         }
       ]
