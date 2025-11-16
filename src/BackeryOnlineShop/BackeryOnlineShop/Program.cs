@@ -1,10 +1,13 @@
 using BackeryOnlineShop.Components;
+using Microsoft.FeatureManagement;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
+
+builder.Services.AddFeatureManagement();
 
 var app = builder.Build();
 

@@ -32,6 +32,12 @@ resource appService 'Microsoft.Web/sites@2023-12-01' = {
       linuxFxVersion: 'DOCKER|${acrLoginServer}/${containerImage}'
       acrUseManagedIdentityCreds: true
       alwaysOn: true
+      appSettings: [
+        {
+          name: 'FeatureManagement:ProductsFeature'
+          value: 'false'
+        }
+      ]
     }
   }
   identity: {
