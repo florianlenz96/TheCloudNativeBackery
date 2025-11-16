@@ -8,6 +8,7 @@ builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
 
 builder.Services.AddFeatureManagement();
+builder.Configuration.AddEnvironmentVariables();
 
 var app = builder.Build();
 
