@@ -35,7 +35,7 @@ resource appService 'Microsoft.Web/sites@2023-12-01' = {
       appSettings: [
         {
           name: 'FeatureManagement__ProductsFeature'
-          value: 'false'
+          value: 'true'
         }
       ]
     }
